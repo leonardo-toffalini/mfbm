@@ -1,36 +1,40 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from mfbm import simulate_mfbm_efficient
+from mfbm import mfbm, mfbm_generator
 import time
 
-def timeit(func):
-    def wrapper(*args, **kwargs):
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        end = time.perf_counter()
-        print(f"{func.__name__} took {end - start:.4f} seconds")
-        return result
-    return wrapper
+def corr_matrix(n, mean_corr):
+    corr = np.full((n, n), mean_corr)
+    noise = 0.01 * np.random.normal(scale=1, size=(n, n))
+    np.fill_diagonal(noise, 0)
+    corr += noise
+    np.fill_diagonal(corr, 1)
+    return np.clip(corr, 0, 1)
 
 if __name__ == "__main__":
     p = 5
-    H = np.linspace(0.8, 0.9, p)
+    H = np.random.uniform(0.05, 0.2, p)
     sigma = np.ones_like(H)
-    rho_matrix = 0.6 * np.ones((p, p)) + 0.4 * np.eye(p)
-    eta_matrix = np.array([[0.0, 0.2], [-0.2, 0.0]])  # Asymmetry parameters
+    mean_corr = 0.6
     
     n = 1000
-    T = 100.0
+    T = 1000.0
+
+    rho_matrix = corr_matrix(n, mean_corr)
+    print("cross correlations:")
+    print(rho_matrix)
     
     start = time.perf_counter()
-    times, X = simulate_mfbm_efficient(H, sigma, rho_matrix, eta_matrix, n, T)
+    # times, X = simulate_mfbm(H, sigma, rho_matrix, n, T)
+    times, X = np.zeros(n), np.zeros((p, n))
+    for i, (t, x) in enumerate(mfbm_generator(H, sigma, rho_matrix, n, T)):
+        times[i] = t
+        X[:, i] = x
     print(f"took {time.perf_counter() - start:.4f} seconds to simulate")
-
     
     plt.figure(figsize=(12, 8))
 
-    viridis = cm.get_cmap("viridis")
+    viridis = plt.get_cmap("viridis")
     colors = viridis(np.linspace(0, 1, p))
     for i in range(p):
         plt.plot(times, X[i, :], color=colors[i], linewidth=1.0, alpha=0.7, label=f'Component {i} (H={H[i]:.02f})')
