@@ -15,7 +15,7 @@ def validate_parameters(H, rho_matrix):
                 print(f"Warning: H[{i}] + H[{j}] ≈ 1, may cause numerical issues")
 
 def mfbm(H, sigma, rho_matrix, n, T=1.0):
-    times, X = np.zeros(n), np.zeros((p, n))
+    times, X = np.zeros(n), np.zeros((len(H), n))
     for i, (t, x) in enumerate(mfbm_generator(H, sigma, rho_matrix, n, T)):
         times[i] = t
         X[:, i] = x

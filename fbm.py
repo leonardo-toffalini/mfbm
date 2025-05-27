@@ -18,7 +18,8 @@ class FBM(object):
             "daviesharte": self._daviesharte, 
             "cholesky": self._cholesky, 
             "hosking": self._hosking, 
-            "cholesky_better": self._cholesky_better
+            "cholesky_better": self._cholesky_better,
+            "davies_harte_better": self._davies_harte_better,
         }
         self.n = n
         self.hurst = hurst
@@ -206,7 +207,54 @@ class FBM(object):
         return fgn
 
     def _davies_harte_better(self, gn):
-        pass
+        if self._eigenvals is None or self._changed:
+            row_component = [self._autocovariance(i) for i in range(1, self.n)]
+            reverse_component = list(reversed(row_component))
+            row = [self._autocovariance(0)] + row_component + [0] + reverse_component
+
+            self._eigenvals = np.fft.fft(row).real
+            self._changed = False
+
+        if np.any([ev < 0 for ev in self._eigenvals]):
+            warnings.warn(
+                "Combination of increments n and Hurst value H "
+                "invalid for Davies-Harte method. Reverting to Hosking method."
+                " Occurs when n is small and Hurst is close to 1. "
+            )
+            self.method = "hosking"
+            self._eigenvals = None
+            return self._hosking(gn)
+
+        gn2 = np.random.normal(0.0, 1.0, self.n)
+
+        i = jnp.arange(2 * self.n)
+
+        # Define conditions
+        cond_0 = (i == 0)
+        cond_1 = (i > 0) & (i < self.n)
+        cond_n = (i == self.n)
+        cond_else = (i > self.n)
+        
+        # Calculate values for each condition with proper indexing
+        val_0 = jnp.sqrt(self._eigenvals[0] / (2 * self.n)) * gn[0]
+        val_1 = jnp.sqrt(self._eigenvals[cond_1] / (4 * self.n)) * (gn[i[cond_1]] + 1j * gn2[i[cond_1]])
+        val_n = jnp.sqrt(self._eigenvals[self.n] / (2 * self.n)) * gn2[0]
+        val_else_indices = i[cond_else]
+        val_else = jnp.sqrt(self._eigenvals[val_else_indices] / (4 * self.n)) * (
+            gn[2 * self.n - val_else_indices] - 1j * gn2[2 * self.n - val_else_indices]
+        )
+        
+        # Initialize w array
+        w = jnp.zeros(2 * self.n, dtype=jnp.complex64)
+        
+        # Assign values using boolean indexing
+        w = w.at[cond_0].set(val_0)
+        w = w.at[cond_1].set(val_1)
+        w = w.at[cond_n].set(val_n)
+        w = w.at[cond_else].set(val_else)
+        z = np.fft.fft(w)
+        fgn = z[: self.n].real
+        return fgn
 
     def _cholesky(self, gn):
         """Generate a fgn realization using the Cholesky method.
