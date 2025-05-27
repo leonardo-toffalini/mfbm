@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mfbm import mfbm, mfbm_generator
 import time
+from fbm import FBM
 
 def corr_matrix(n, mean_corr):
     corr = np.full((n, n), mean_corr)
