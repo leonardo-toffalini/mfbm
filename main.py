@@ -12,21 +12,20 @@ def corr_matrix(n, mean_corr):
     return np.clip(corr, 0, 1)
 
 if __name__ == "__main__":
-    p = 5
-    H = np.random.uniform(0.05, 0.2, p)
+    p = 1
+    H = np.linspace(0.01, 0.7, p)
     sigma = np.ones_like(H)
     mean_corr = 0.6
-    
-    n = 100
+
+    print(f"{H = }")
+
+    n = 1_000_000
     T = float(n)
 
-    rho_matrix = corr_matrix(n, mean_corr)
-    plt.imshow(rho_matrix, cmap='coolwarm', interpolation='nearest')
-    plt.show()
-    
+    rho_matrix = corr_matrix(p, mean_corr)
+
     start = time.perf_counter()
-    # times, X = simulate_mfbm(H, sigma, rho_matrix, n, T)
-    times, X = mfbm(H, sigma, rho_matrix, n, T, method="cholesky")
+    times, X = mfbm(H, sigma, rho_matrix, n, T, method="cholesky_jax")
     print(f"took {time.perf_counter() - start:.4f} seconds to simulate")
     
     plt.figure(figsize=(12, 8))
