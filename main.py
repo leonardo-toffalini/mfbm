@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mfbm import mfbm, mfbm_generator
+from mfbm import mfbm
 import time
-from fbm import FBM
 
 def corr_matrix(n, mean_corr):
     corr = np.full((n, n), mean_corr)
@@ -18,19 +17,16 @@ if __name__ == "__main__":
     sigma = np.ones_like(H)
     mean_corr = 0.6
     
-    n = 1000
-    T = 1000.0
+    n = 100
+    T = float(n)
 
     rho_matrix = corr_matrix(n, mean_corr)
-    print("cross correlations:")
-    print(rho_matrix)
+    plt.imshow(rho_matrix, cmap='coolwarm', interpolation='nearest')
+    plt.show()
     
     start = time.perf_counter()
     # times, X = simulate_mfbm(H, sigma, rho_matrix, n, T)
-    times, X = np.zeros(n), np.zeros((p, n))
-    for i, (t, x) in enumerate(mfbm_generator(H, sigma, rho_matrix, n, T)):
-        times[i] = t
-        X[:, i] = x
+    times, X = mfbm(H, sigma, rho_matrix, n, T, method="cholesky")
     print(f"took {time.perf_counter() - start:.4f} seconds to simulate")
     
     plt.figure(figsize=(12, 8))

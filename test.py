@@ -1,5 +1,6 @@
 from time import perf_counter
 from fbm import fbm
+from mfbm import _cholesky
 
 T = 10_000_000
 
