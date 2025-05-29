@@ -2,6 +2,47 @@ import warnings
 import numpy as np
 import jax
 import jax.numpy as jnp
+from time import perf_counter
+
+def wood_chan(n, H, length):
+    r = np.zeros(n + 1)
+    for i in range(n + 1):
+        if i == 0:
+            r[0] = 1
+        else:
+            r[i] = 0.5 * ((i+1)**(2*H) - 2*i**(2*H) + ((i-1)**(2*H)))
+
+    r = np.concatenate([r, r[::-1][1:-1]])
+
+    lmbd = np.real(np.fft.fft(r) / (2*n))
+    sqrt_vals = np.array([np.sqrt(x) for x in lmbd])
+
+    noise = np.random.normal(size=2 * n) + np.random.normal(size=2*n) * complex(0, 1)
+
+    W = np.fft.fft(sqrt_vals * noise)
+    W = n**(-H) * np.cumsum(np.concatenate(([0], np.real(W[1:(n + 1)]))))
+
+    W = (length**H) * W
+    return W
+
+def wood_chan_np(n, H, length):
+    r = np.zeros(n + 1)
+    r[0] = 1
+
+    i = np.arange(1, n + 1)
+    r[1:] = 0.5 * ((i + 1) ** (2 * H) - 2 * i ** (2 * H) + ((i - 1) ** (2 * H)))
+
+    r = np.concatenate([r, np.flip(r[1:-1])])
+
+    lmbd = np.real(np.fft.fft(r) / (2 * n))
+    sqrt_vals = np.sqrt(lmbd)
+    noise = np.random.normal(size=2 * n) + np.random.normal(size=2 * n) * 1j
+
+    W = np.fft.fft(sqrt_vals * noise)
+    W = n ** (-H) * np.cumsum(np.concatenate(([0], np.real(W[1:(n + 1)]))))
+
+    W = (length ** H) * W
+    return W
 
 class FBM(object):
     """The FBM class.
