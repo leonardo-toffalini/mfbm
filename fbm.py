@@ -248,6 +248,10 @@ class FBM(object):
         return fgn
 
     def _davies_harte_better(self, gn):
+        # account for the overhead of vector operations for small sample sizes
+        if self.n < 70_000:
+            return self._daviesharte(gn)
+
         if self._eigenvals is None or self._changed:
             row_component = [self._autocovariance(i) for i in range(1, self.n)]
             reverse_component = list(reversed(row_component))
