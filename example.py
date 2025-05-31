@@ -1,4 +1,4 @@
-from mfbm import MFBM
+from mfbm.mfbm import MFBM
 import numpy as np
 
 np.set_printoptions(precision=5, suppress=True, linewidth=1000)
