@@ -13,13 +13,16 @@ def corr_matrix(p, mean_corr):
     return np.clip(corr, 0, 1)
 
 H = np.linspace(0.05, 0.25, 2)
-n = 9
+n = 4
+m = 1 << (2 * n - 1).bit_length()
+p = H.size
 rho = corr_matrix(len(H), 0.8)
-print(rho)
 eta = np.ones_like(rho)
 sigma = np.ones(len(H))
 
 mfbm = MFBM(H, n, rho, eta, sigma)
 
-print(mfbm.GG)
+print(mfbm.C)
+print(mfbm.C.shape)
+print(f"{m}·{p} x {m}·{p}")
 
