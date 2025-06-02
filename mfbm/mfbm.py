@@ -1,5 +1,5 @@
 import numpy as np
-from utils import block_circulant
+from .utils import block_circulant
 
 class MFBM:
     def __init__(self, H: np.ndarray, n: int, rho: np.ndarray, eta: np.ndarray, sigma: np.ndarray):
