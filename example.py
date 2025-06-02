@@ -21,7 +21,7 @@ m = 1 << (2 * n - 1).bit_length()
 random_corr = True
 
 if random_corr:
-    rho = random_corr_matrix(len(H), 0.8)
+    rho = random_corr_matrix(len(H), 0.7)
 else:
     rho = 0.7 * np.ones((p, p))
     np.fill_diagonal(rho, 1)

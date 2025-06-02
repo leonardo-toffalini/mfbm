@@ -2,7 +2,6 @@ import warnings
 import numpy as np
 import jax
 import jax.numpy as jnp
-from time import perf_counter
 
 def wood_chan(n, H, length):
     r = np.zeros(n + 1)
