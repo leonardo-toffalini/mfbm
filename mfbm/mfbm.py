@@ -43,16 +43,13 @@ class MFBM:
         return self.rho[i, j] - self.eta[i, j] * np.sign(h) * np.abs(h) ** (self.H[i] + self.H[j])
 
     def w(self, i: int, j: int, h: float):
+        """Cheaty formula that works"""
         h = abs(h)
         return self.rho[i, j] * h ** (self.H[i] + self.H[j])
 
     def gamma_func(self, i: int, j: int, h: float):
         return (self.sigma[i] * self.sigma[j]) / 2 * (
             self.w(i, j, h - 1) - 2 * self.w(i, j, h) + self.w(i, j, h + 1)
-        )
-
-        return (self.sigma[i] * self.sigma[j]) / 2 * (
-            self.w_func(i, j, h - 1) - 2 * self.w_func(i, j, h) + self.w_func(i, j, h + 1)
         )
 
     def construct_G(self, h: float):
@@ -77,16 +74,16 @@ class MFBM:
         circulant_row = np.ndarray((self.m, self.p, self.p))  # m number of p x p matrices
         N = self.m // 2
         circulant_row[:N + 1] = [self.construct_G(i) for i in range(N + 1)]
-        circulant_row[-N + 1:] = np.flip(circulant_row[1:N])
+        circulant_row[-N + 1:] = np.flip(circulant_row[1 : N])
         return circulant_row
 
     def sample_mfgn(self):
         B = np.ndarray((self.m, self.p, self.p), dtype=complex)
         for i in range(self.p):
-            for j in range(i+1):
-                B[:,i,j] = np.fft.fft(self.circulant_row[:,i,j])
+            for j in range(i + 1):
+                B[:, i, j] = np.fft.fft(self.circulant_row[:, i, j])
                 if i != j:
-                    B[:,j,i] = np.conjugate(B[:,i,j])
+                    B[:, j, i] = np.conjugate(B[:, i, j])
 
         self.transformation = np.ndarray((self.m, self.p, self.p), dtype=complex)
         for i in range(len(self.transformation)):
