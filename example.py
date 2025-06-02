@@ -25,4 +25,5 @@ mfbm = MFBM(H, n, rho, eta, sigma)
 print(mfbm.C)
 print(mfbm.C.shape)
 print(f"{m}·{p} x {m}·{p}")
+# print(mfbm.circulant_row)
 
