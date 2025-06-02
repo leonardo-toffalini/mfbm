@@ -1,13 +1,5 @@
 import numpy as np
-
-def block_circulant(blocks):
-    r, c = blocks[0].shape
-    B = np.zeros((len(blocks) * r, len(blocks) * c), dtype=blocks[0].dtype)
-    for k in range(len(blocks)):
-        for l in range(len(blocks)):
-            kl = np.mod(k + l, len(blocks))
-            B[r * kl : r * (kl + 1), c * k : c * (k + 1)] = blocks[l]
-    return B
+from utils import block_circulant
 
 class MFBM:
     def __init__(self, H: np.ndarray, n: int, rho: np.ndarray, eta: np.ndarray, sigma: np.ndarray):
