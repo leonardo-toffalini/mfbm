@@ -1,5 +1,5 @@
-from mfbm.mfbm import MFBM
-from mfbm.fbm import FBM
+from mfbm import MFBM
+from mfbm import FBM
 import numpy as np
 import matplotlib.pyplot as plt
 from mfbm.utils import random_corr_matrix
@@ -8,6 +8,7 @@ def mfbm_demo():
     p = 5
     H = np.linspace(0.6, 0.9, 5)
     n = 100
+    T = 100
 
     random_corr = True
 
@@ -21,7 +22,7 @@ def mfbm_demo():
     sigma = np.ones(len(H))
 
     mfbm = MFBM(H, n, rho, eta, sigma)
-    ts = mfbm.sample()
+    ts = mfbm.sample(T)
 
     plt.figure(figsize=(14, 6))
     ax1 = plt.subplot(1, 3, 1)
