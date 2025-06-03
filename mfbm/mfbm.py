@@ -45,7 +45,7 @@ class MFBM:
         )
 
     def construct_G(self, h: float):
-        result = np.ndarray((self.p, self.p))
+        result = np.empty((self.p, self.p))
         for i in range(self.p):
             result[i, i] = self.single_cov(self.H[i], h) * self.sigma[i] ** 2
             for j in range(i):
@@ -63,50 +63,58 @@ class MFBM:
             raise ValueError("argument j must be in the range [0, m-1]")
 
     def construct_circulant_row(self):
-        circulant_row = np.ndarray((self.m, self.p, self.p))  # m number of p x p matrices
+        circulant_row = np.empty((self.m, self.p, self.p))  # m number of p x p matrices
         N = self.m // 2
         circulant_row[:N + 1] = [self.construct_G(i) for i in range(N + 1)]
         circulant_row[-N + 1:] = np.flip(circulant_row[1 : N])
         return circulant_row
 
     def sample_mfgn(self):
-        B = np.ndarray((self.m, self.p, self.p), dtype=complex)
+        # Step 1.
+        B = np.empty((self.m, self.p, self.p), dtype=complex)
         for i in range(self.p):
             for j in range(i + 1):
                 B[:, i, j] = np.fft.fft(self.circulant_row[:, i, j])
                 if i != j:
                     B[:, j, i] = np.conjugate(B[:, i, j])
 
-        self.transformation = np.ndarray((self.m, self.p, self.p), dtype=complex)
+        # Step 2. and 3.
+        self.transformation = np.empty((self.m, self.p, self.p), dtype=complex)
         for i in range(len(self.transformation)):
             e, L = np.linalg.eig(B[i])
             e[e < 0] = 0
             e = np.diag(np.sqrt(e))
             self.transformation[i] = L @ e @ np.conjugate(L.T)
 
-        v1 = np.random.standard_normal((self.p, self.N - 1))
-        v2 = np.random.standard_normal((self.p, self.N - 1))
-        w = np.ndarray((self.p, 2 * self.N), dtype=complex)
-        w[:, 0] = np.random.standard_normal(self.p) / np.sqrt(self.m)
-        w[:, self.N] = np.random.standard_normal(self.p) / np.sqrt(self.m)
-        w[:, 1 : self.N] = (v1 + 1j*v2) / np.sqrt(4 * self.N)
-        w[:, -self.N + 1:] = np.conjugate(w[:, self.N - 1 : 0 : -1])
-        w = np.einsum('...ij,j...->i...', self.transformation, w, optimize='optimal')
+        # Step 4.
+        U = np.random.standard_normal((self.p, self.N - 1))
+        V = np.random.standard_normal((self.p, self.N - 1))
+        Z = np.empty((self.p, 2 * self.N), dtype=complex)
+        Z[:, 0] = np.random.standard_normal(self.p) / np.sqrt(self.m)
+        Z[:, self.N] = np.random.standard_normal(self.p) / np.sqrt(self.m)
+        Z[:, 1 : self.N] = (U + 1j * V) / np.sqrt(4 * self.N)
+        Z[:, -self.N + 1:] = np.conjugate(Z[:, self.N - 1 : 0 : -1])
+        W = np.empty((self.p, self.m), dtype=complex)
+        for i in range(self.m):
+            W[:, i] = self.transformation[i] @ Z[:, i]
 
-        ts = np.ndarray((self.p, self.n))
+        # Step 5.
+        X = np.empty_like(W)
+        mfGn = np.empty((self.p, self.n))
         for i in range(self.p):
-            w[i] = np.fft.fft(w[i])
-        ts = np.real(w[:, :self.n])
+            X[i] = np.fft.fft(W[i])
+        mfGn = np.real(X[:, :self.n])
         
-        return ts
+        return mfGn
 
     def sample(self, T: float = 0) -> np.ndarray:
         if T <= 0:
             T = self.n
         spacing = (T / self.n) ** self.H
 
-        fGns = self.sample_mfgn()[:, :-1]
-        ts = np.cumsum(np.insert(fGns, 0, 0, axis=1), axis=1)
+        # Step 6.
+        mfGn = self.sample_mfgn()[:, :-1]
+        mfBm = np.cumsum(np.insert(mfGn, 0, 0, axis=1), axis=1)
 
-        return ts * spacing[:, None]
+        return mfBm * spacing[:, None]
 
