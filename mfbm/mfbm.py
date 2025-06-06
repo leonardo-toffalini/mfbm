@@ -1,20 +1,29 @@
 import numpy as np
+from typing import Optional
 from .utils import block_circulant
 
 class MFBM:
-    def __init__(self, H: np.ndarray, n: int, rho: np.ndarray, eta: np.ndarray, sigma: np.ndarray):
+    def __init__(self, H: np.ndarray,
+                 rho: Optional[np.ndarray] = None,
+                 eta: Optional[np.ndarray] = None,
+                 sigma: Optional[np.ndarray] = None):
         self.H = H
         self.p = len(self.H)
-        self.n = n
+        self.n = None
+        self.rho = np.eye(self.p, self.p) if rho is None else rho
+        self.eta = np.zeros((self.p, self.p)) if eta is None else eta
+        self.sigma = np.ones(self.p) if sigma is None else sigma
+
+    def _set_attrs(self, n: int):
         self.m = 1 << (2 * n - 1).bit_length()  # smallest power of 2 greater than 2(n-1)
-        self.N = self.m // 2
-        self.rho = np.array(rho)
-        self.eta = np.array(eta)
-        self.sigma = np.array(sigma)
         self.GG = np.block([
             [self.construct_G(np.abs(i - j)) for i in range(1, n + 1)]
             for j in range(1, n + 1)
         ])
+        self.N = self.m // 2
+        self.rho = np.array(self.rho)
+        self.eta = np.array(self.eta)
+        self.sigma = np.array(self.sigma)
         self.circulant_row = self.construct_circulant_row()
         self.C = block_circulant(self.circulant_row)
 
@@ -69,7 +78,7 @@ class MFBM:
         circulant_row[-N + 1:] = np.flip(circulant_row[1 : N])
         return circulant_row
 
-    def sample_mfgn(self):
+    def _construct_W(self):
         # Step 1.
         B = np.empty((self.m, self.p, self.p), dtype=complex)
         for i in range(self.p):
@@ -94,26 +103,32 @@ class MFBM:
         Z[:, self.N] = np.random.standard_normal(self.p) / np.sqrt(self.m)
         Z[:, 1 : self.N] = (U + 1j * V) / np.sqrt(4 * self.N)
         Z[:, -self.N + 1:] = np.conjugate(Z[:, self.N - 1 : 0 : -1])
-        W = np.empty((self.p, self.m), dtype=complex)
+        self.W = np.empty((self.p, self.m), dtype=complex)
         for i in range(self.m):
-            W[:, i] = self.transformation[i] @ Z[:, i]
+            self.W[:, i] = self.transformation[i] @ Z[:, i]
+
+    def sample_mfgn(self, n: int):
+        if n != self.n:
+            self.n = n
+            self._set_attrs(n)
+            self._construct_W()
 
         # Step 5.
-        X = np.empty_like(W)
-        mfGn = np.empty((self.p, self.n))
+        X = np.empty_like(self.W)
+        mfGn = np.empty((self.p, n))
         for i in range(self.p):
-            X[i] = np.fft.fft(W[i])
+            X[i] = np.fft.fft(self.W[i])
         mfGn = np.real(X[:, :self.n])
         
         return mfGn
 
-    def sample(self, T: float = 0) -> np.ndarray:
+    def sample(self, n: int, T: float = 0) -> np.ndarray:
         if T <= 0:
-            T = self.n
-        spacing = (T / self.n) ** self.H
+            T = n
+        spacing = (T / n) ** self.H
 
         # Step 6.
-        mfGn = self.sample_mfgn()[:, :-1]
+        mfGn = self.sample_mfgn(n)[:, :-1]
         mfBm = np.cumsum(np.insert(mfGn, 0, 0, axis=1), axis=1)
 
         return mfBm * spacing[:, None]

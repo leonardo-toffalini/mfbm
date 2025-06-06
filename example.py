@@ -13,7 +13,7 @@ def mfbm_demo():
     random_corr = True
 
     if random_corr:
-        rho = random_corr_matrix(len(H), 0.7)
+        rho = random_corr_matrix(len(H), 0.85)
     else:
         rho = 0.7 * np.ones((p, p))
         np.fill_diagonal(rho, 1)
@@ -21,15 +21,16 @@ def mfbm_demo():
     eta = np.ones_like(rho)
     sigma = np.ones(len(H))
 
-    mfbm = MFBM(H, n, rho, eta, sigma)
-    ts = mfbm.sample(T)
+    mfbm = MFBM(H, rho, eta, sigma)
+    ts = mfbm.sample(n, T)
 
-    plt.figure(figsize=(14, 6))
-    ax1 = plt.subplot(1, 3, 1)
-    ax1.imshow(rho)
+    fig = plt.figure(figsize=(14, 6))
+    ax1 = plt.subplot(1, 4, 4)
+    im = ax1.imshow(rho)
+    fig.colorbar(im, orientation="vertical")
     ax1.set_title("Correlations")
 
-    ax2 = plt.subplot(1, 3, (2, 4))
+    ax2 = plt.subplot(1, 4, (1, 3))
     for i in range(len(H)):
         ax2.plot(range(n), ts[i], label=f'H{i}={H[i]:.2f}', alpha=0.7)
     ax2.legend()
