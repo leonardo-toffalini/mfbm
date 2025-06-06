@@ -23,11 +23,19 @@ np.fill_diagonal(rho, 1)
 eta = np.ones_like(rho)
 sigma = np.ones(len(H))
 
-mfbm = MFBM(H, n, rho, eta, sigma)
-ts = mfbm.sample(T)
+mfbm = MFBM(H, rho, eta, sigma)
+ts = mfbm.sample(n, T)
 ```
 
-![mfbm](https://github.com/user-attachments/assets/32e8242e-11e4-454e-84a8-2bc83b03195c)
+Explanation of the parameters:
+- `H: np.ndarray` is a one dimensional array of the Hurst parameters, where all Hursts are in the range (0, 1).
+- `rho: np.ndarray` is a two dimensional array of the cross correlations between the multiple fBms, default is the identity matrix.
+- `sigma: np.ndarray` is a one dimensional array of the standard deviations of the single fBms, default is all ones.
+- `n: int` is the number of increaments to generate for the multivariate fractional Gaussian noise.
+- `T: float` is the time horizon of the mfBm, default is `n`.
+
+![mfbm](https://github.com/user-attachments/assets/2fb0f6bf-58a5-4cd1-99e9-824bd8b17315)
+
 
 [1] Andrew T. A. Wood & Grace Chan (1994): Simulation of Stationary
 Gaussian Processes in [0, 1]^d , Journal of Computational and Graphical Statistics, 3:4,
