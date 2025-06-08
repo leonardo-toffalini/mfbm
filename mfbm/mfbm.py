@@ -78,7 +78,7 @@ class MFBM:
         circulant_row[-N + 1:] = np.flip(circulant_row[1 : N])
         return circulant_row
 
-    def _construct_W(self):
+    def _construct_transformation(self):
         # Step 1.
         B = np.empty((self.m, self.p, self.p), dtype=complex)
         for i in range(self.p):
@@ -95,6 +95,13 @@ class MFBM:
             e = np.diag(np.sqrt(e))
             self.transformation[i] = L @ e @ np.conjugate(L.T)
 
+
+    def sample_mfgn(self, n: int):
+        if n != self.n:
+            self.n = n
+            self._set_attrs(n)
+            self._construct_transformation()
+
         # Step 4.
         U = np.random.standard_normal((self.p, self.N - 1))
         V = np.random.standard_normal((self.p, self.N - 1))
@@ -106,12 +113,6 @@ class MFBM:
         self.W = np.empty((self.p, self.m), dtype=complex)
         for i in range(self.m):
             self.W[:, i] = self.transformation[i] @ Z[:, i]
-
-    def sample_mfgn(self, n: int):
-        if n != self.n:
-            self.n = n
-            self._set_attrs(n)
-            self._construct_W()
 
         # Step 5.
         X = np.empty_like(self.W)
