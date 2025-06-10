@@ -1,3 +1,6 @@
+![Python 3x](https://img.shields.io/badge/python-3.x-blue.svg)
+![PyPI - Version](https://img.shields.io/pypi/v/mfbm)
+
 # Multivariate fractional Brownian motion (mfBm)
 This package provides implementation for the multivariate fractional Brownian motion and simple fractional brownian motion with the method described in [1].
 
