@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mfbm"
-version = "0.1.3"
+version = "0.1.4"
 description = "Multivariate fractional Brownian motion"
 authors = [
     { name="Leonardo Toffalini", email="leonardotoffalini@gmail.com" }

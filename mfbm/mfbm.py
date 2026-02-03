@@ -2,24 +2,32 @@ import numpy as np
 from typing import Optional
 from .utils import block_circulant
 
+
 class MFBM:
-    def __init__(self, H: np.ndarray,
-                 rho: Optional[np.ndarray] = None,
-                 eta: Optional[np.ndarray] = None,
-                 sigma: Optional[np.ndarray] = None):
+    def __init__(
+        self,
+        H: np.ndarray,
+        rho: Optional[np.ndarray] = None,
+        eta: Optional[np.ndarray] = None,
+        sigma: Optional[np.ndarray] = None,
+    ):
         self.H = H
         self.p = len(self.H)
         self.n = None
         self.rho = np.eye(self.p, self.p) if rho is None else rho
-        self.eta = np.zeros((self.p, self.p)) if eta is None else eta
+        self.eta = np.eye(self.p, self.p) if eta is None else eta
         self.sigma = np.ones(self.p) if sigma is None else sigma
 
     def _set_attrs(self, n: int):
-        self.m = 1 << (2 * n - 1).bit_length()  # smallest power of 2 greater than 2(n-1)
-        self.GG = np.block([
-            [self.construct_G(np.abs(i - j)) for i in range(1, n + 1)]
-            for j in range(1, n + 1)
-        ])
+        self.m = (
+            1 << (2 * n - 1).bit_length()
+        )  # smallest power of 2 greater than 2(n-1)
+        self.GG = np.block(
+            [
+                [self.construct_G(np.abs(i - j)) for i in range(1, n + 1)]
+                for j in range(1, n + 1)
+            ]
+        )
         self.N = self.m // 2
         self.rho = np.array(self.rho)
         self.eta = np.array(self.eta)
@@ -34,14 +42,16 @@ class MFBM:
         H2 = 2 * H
         if h == 0:
             return 1
-        return ((h + 1) ** H2 + (h - 1) ** H2 - 2 * (h ** H2)) / 2
+        return ((h + 1) ** H2 + (h - 1) ** H2 - 2 * (h**H2)) / 2
 
     def w_func(self, i: int, j: int, h: float):
         """Exact replica of the formula presented in basic properties of mfbm.
-           Not defined for h = 0."""
+        Not defined for h = 0."""
         if self.H[i] + self.H[j] == 1:
             return self.rho[i, j] * np.abs(h) + self.eta[i, j] * h * np.log(np.abs(h))
-        return self.rho[i, j] - self.eta[i, j] * np.sign(h) * np.abs(h) ** (self.H[i] + self.H[j])
+        return self.rho[i, j] - self.eta[i, j] * np.sign(h) * np.abs(h) ** (
+            self.H[i] + self.H[j]
+        )
 
     def w(self, i: int, j: int, h: float):
         """Cheaty formula that works"""
@@ -49,8 +59,10 @@ class MFBM:
         return self.rho[i, j] * h ** (self.H[i] + self.H[j])
 
     def gamma_func(self, i: int, j: int, h: float):
-        return (self.sigma[i] * self.sigma[j]) / 2 * (
-            self.w(i, j, h - 1) - 2 * self.w(i, j, h) + self.w(i, j, h + 1)
+        return (
+            (self.sigma[i] * self.sigma[j])
+            / 2
+            * (self.w(i, j, h - 1) - 2 * self.w(i, j, h) + self.w(i, j, h + 1))
         )
 
     def construct_G(self, h: float):
@@ -67,15 +79,17 @@ class MFBM:
         elif j == self.m / 2:
             return (self.construct_G(j) + self.construct_G(j)) / 2
         elif self.m / 2 < j and j <= self.m - 1:
-            return self.construct_G(self.m - j)  # basic properties paper says other way around, Wood Chan says this way
+            return self.construct_G(
+                self.m - j
+            )  # basic properties paper says other way around, Wood Chan says this way
         else:
             raise ValueError("argument j must be in the range [0, m-1]")
 
     def construct_circulant_row(self):
         circulant_row = np.empty((self.m, self.p, self.p))  # m number of p x p matrices
         N = self.m // 2
-        circulant_row[:N + 1] = [self.construct_G(i) for i in range(N + 1)]
-        circulant_row[-N + 1:] = np.flip(circulant_row[1 : N])
+        circulant_row[: N + 1] = [self.construct_G(i) for i in range(N + 1)]
+        circulant_row[-N + 1 :] = np.flip(circulant_row[1:N])
         return circulant_row
 
     def _construct_transformation(self):
@@ -95,7 +109,6 @@ class MFBM:
             e = np.diag(np.sqrt(e))
             self.transformation[i] = L @ e @ np.conjugate(L.T)
 
-
     def sample_mfgn(self, n: int):
         if n != self.n:
             self.n = n
@@ -109,7 +122,7 @@ class MFBM:
         Z[:, 0] = np.random.standard_normal(self.p) / np.sqrt(self.m)
         Z[:, self.N] = np.random.standard_normal(self.p) / np.sqrt(self.m)
         Z[:, 1 : self.N] = (U + 1j * V) / np.sqrt(4 * self.N)
-        Z[:, -self.N + 1:] = np.conjugate(Z[:, self.N - 1 : 0 : -1])
+        Z[:, -self.N + 1 :] = np.conjugate(Z[:, self.N - 1 : 0 : -1])
         self.W = np.empty((self.p, self.m), dtype=complex)
         for i in range(self.m):
             self.W[:, i] = self.transformation[i] @ Z[:, i]
@@ -119,8 +132,8 @@ class MFBM:
         mfGn = np.empty((self.p, n))
         for i in range(self.p):
             X[i] = np.fft.fft(self.W[i])
-        mfGn = np.real(X[:, :self.n])
-        
+        mfGn = np.real(X[:, : self.n])
+
         return mfGn
 
     def sample(self, n: int, T: float = 0) -> np.ndarray:
@@ -133,4 +146,3 @@ class MFBM:
         mfBm = np.cumsum(np.insert(mfGn, 0, 0, axis=1), axis=1)
 
         return mfBm * spacing[:, None]
-
