@@ -22,18 +22,18 @@ class MFBM:
         self.m = (
             1 << (2 * n - 1).bit_length()
         )  # smallest power of 2 greater than 2(n-1)
-        self.GG = np.block(
-            [
-                [self.construct_G(np.abs(i - j)) for i in range(1, n + 1)]
-                for j in range(1, n + 1)
-            ]
-        )
+        # self.GG = np.block(
+        #     [
+        #         [self.construct_G(np.abs(i - j)) for i in range(1, n + 1)]
+        #         for j in range(1, n + 1)
+        #     ]
+        # )
         self.N = self.m // 2
         self.rho = np.array(self.rho)
         self.eta = np.array(self.eta)
         self.sigma = np.array(self.sigma)
         self.circulant_row = self.construct_circulant_row()
-        self.C = block_circulant(self.circulant_row)
+        # self.C = block_circulant(self.circulant_row)
 
     def single_cov(self, H: float, h: float):
         assert 0 < H < 1
